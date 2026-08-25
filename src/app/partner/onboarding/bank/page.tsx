@@ -1,5 +1,6 @@
 "use client";
 import { useCreateBankDetails } from "@/hooks/useCreateBankDetails";
+import { useGetBankDetails } from "@/hooks/useGetBankDetails";
 import axios from "axios";
 import {
   ArrowLeft,
@@ -12,7 +13,11 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+
+const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/i;
+
 const page = () => {
   const createBankMutation = useCreateBankDetails();
 
@@ -23,13 +28,49 @@ const page = () => {
     mobileNumber: "",
     upi: "",
   });
+  const { data: bankData } = useGetBankDetails();
+  console.log(bankData);
+  useEffect(() => {
+    if (!bankData) return;
+
+    setBankDetails({
+      accountHolderName: bankData.partnerBank.accountHolderName ?? "",
+      accountNumber: bankData.partnerBank.accountNumber ?? "",
+      ifsc: bankData.partnerBank.ifsc ?? "",
+      mobileNumber: bankData.mobileNumber ?? "",
+      upi: bankData.partnerBank.upi ?? "",
+    });
+  }, [bankData]);
+
+  const sanitizedIFSC = bankDetails.ifsc.trim().toUpperCase();
+  const isNameValid = bankDetails.accountHolderName.trim().length >= 3;
+  const isAccountValid = /^\d{9,18}$/.test(bankDetails.accountNumber.trim());
+  const isIfscValid = IFSC_REGEX.test(sanitizedIFSC);
+  const isMobileValid = /^\d{10}$/.test(bankDetails.mobileNumber.trim());
+
+  const canSubmit =
+    isNameValid && isAccountValid && isIfscValid && isMobileValid;
 
   const errorMsg = axios.isAxiosError(createBankMutation.error)
     ? createBankMutation.error.response?.data?.message
     : "Something went wrong";
 
   const handleBankDetails = () => {
-    createBankMutation.mutate(bankDetails);
+    if (!canSubmit) return;
+    const payload = {
+      accountHolderName: bankDetails.accountHolderName.trim(),
+      accountNumber: bankDetails.accountNumber.trim(),
+      ifsc: sanitizedIFSC,
+      mobileNumber: bankDetails.mobileNumber.trim(),
+    };
+    createBankMutation.mutate(payload, {
+      onSuccess: () => {
+        toast.success("Bank details added successfully");
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    });
   };
 
   const router = useRouter();
@@ -75,9 +116,14 @@ const page = () => {
                 id="ahn"
                 type="text"
                 placeholder="As per bank record"
-                className=" flex-1 border-b pb-2 text-sm focus:outline-none border-gray-300 focus:border-black"
+                className={`flex-1 border-b pb-2 text-sm focus:outline-none ${!isNameValid && bankDetails.accountHolderName.length > 0 ? "border-red-400 focus:border-red-500" : "border-gray-300 focus:border-black"} `}
               />
             </div>
+            {!isNameValid && bankDetails.accountHolderName.length > 0 && (
+              <p className="text-xs mt-1 font-semibold text-red-500">
+                Minimum 3 character required
+              </p>
+            )}
           </div>
           <div>
             <label
@@ -101,9 +147,14 @@ const page = () => {
                 id="ahn"
                 type="text"
                 placeholder="Enter Account Number"
-                className=" flex-1 border-b pb-2 text-sm focus:outline-none border-gray-300 focus:border-black"
+                className={`flex-1 border-b pb-2 text-sm focus:outline-none ${!isAccountValid && bankDetails.accountNumber.length > 0 ? "border-red-400 focus:border-red-500" : "border-gray-300 focus:border-black"} `}
               />
             </div>
+            {!isAccountValid && bankDetails.accountNumber.length > 0 && (
+              <p className="text-xs mt-1 font-semibold text-red-500">
+                Enter a valid account number
+              </p>
+            )}
           </div>
           <div>
             <label
@@ -124,9 +175,14 @@ const page = () => {
                 id="ahn"
                 type="text"
                 placeholder="HDFC0001234"
-                className=" flex-1 border-b pb-2 text-sm focus:outline-none border-gray-300 focus:border-black"
+                className={`flex-1 border-b pb-2 text-sm focus:outline-none ${!isIfscValid && bankDetails.ifsc.length > 0 ? "border-red-400 focus:border-red-500" : "border-gray-300 focus:border-black"} `}
               />
             </div>
+            {!isIfscValid && bankDetails.ifsc.length > 0 && (
+              <p className="text-xs mt-1 font-semibold text-red-500">
+                Enter a valid IFSC code
+              </p>
+            )}
           </div>
           <div>
             <label
@@ -150,9 +206,14 @@ const page = () => {
                 id="ahn"
                 type="text"
                 placeholder="Enter your 10 digit mobile number"
-                className=" flex-1 border-b pb-2 text-sm focus:outline-none border-gray-300 focus:border-black"
+                className={`flex-1 border-b pb-2 text-sm focus:outline-none ${!isMobileValid && bankDetails.mobileNumber.length > 0 ? "border-red-400 focus:border-red-500" : "border-gray-300 focus:border-black"} `}
               />
             </div>
+            {!isMobileValid && bankDetails.mobileNumber.length > 0 && (
+              <p className="text-xs mt-1 font-semibold text-red-500">
+                Enter a valid mobile number
+              </p>
+            )}
           </div>
           <div>
             <label
@@ -165,12 +226,15 @@ const page = () => {
               <input
                 value={bankDetails.upi}
                 onChange={(e) =>
-                  setBankDetails((prev) => ({ ...prev, upiId: e.target.value }))
+                  setBankDetails((prev) => ({
+                    ...prev,
+                    upi: e.target.value,
+                  }))
                 }
                 id="ahn"
                 type="text"
                 placeholder="name@upi"
-                className=" flex-1 border-b pb-2 text-sm focus:outline-none border-gray-300 focus:border-black"
+                className={`flex-1 border-b pb-2 text-sm focus:outline-none border-gray-300 focus:border-black `}
               />
             </div>
           </div>
@@ -188,7 +252,7 @@ const page = () => {
         )}
         <motion.button
           onClick={handleBankDetails}
-          disabled={createBankMutation.isPending}
+          disabled={!canSubmit || createBankMutation.isPending}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.96 }}
           className="mt-8 w-full h-14 rounded-2xl bg-black text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-40 trasnsition cursor-pointer"

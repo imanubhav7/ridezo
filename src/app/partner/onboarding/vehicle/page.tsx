@@ -1,5 +1,6 @@
 "use client";
 import { useCreateVehicle } from "@/hooks/useCreateVehicle";
+import { useGetVehicle } from "@/hooks/useGetVehicle";
 import axios from "axios";
 import {
   ArrowLeft,
@@ -11,7 +12,8 @@ import {
 } from "lucide-react";
 import { motion, number } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 const VEHICLE = [
   { id: "bike", lable: "Bike", icon: Bike, desc: "2 Wheeler" },
@@ -33,12 +35,32 @@ const page = () => {
     : "Something went wrong";
 
   const handleVehicle = async () => {
-    createVehicleMutation.mutate({
-      type: vehicleType,
-      number: vehicleNumber,
-      vehicleModel,
-    });
+    createVehicleMutation.mutate(
+      {
+        type: vehicleType,
+        number: vehicleNumber,
+        vehicleModel,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Vehicle added successfully");
+          router.push("/partner/onboarding/documents");
+        },
+        onError: (error) => {
+          toast.error(error.message);
+        },
+      },
+    );
   };
+
+  const { data: vehicle, isLoading, isError } = useGetVehicle();
+
+  useEffect(() => {
+    if (!vehicle) return;
+    setVehicleType(vehicle.type);
+    setVehicleNumber(vehicle.number);
+    setVehicleModel(vehicle.vehicleModel);
+  }, [vehicle]);
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4">

@@ -5,6 +5,7 @@ interface IVehicle {
   accountHolderName: string;
   accountNumber: string;
   ifsc: string;
+  mobileNumber: string;
   upi?: string;
   status: "not_added" | "added" | "verified";
   createdAt: Date;
@@ -29,6 +30,10 @@ const partnerBankSchema = new mongoose.Schema<IVehicle>(
       type: String,
       required: true,
       uppercase: true,
+    },
+    mobileNumber: {
+      type: String,
+      required: true,
     },
     upi: {
       type: String,

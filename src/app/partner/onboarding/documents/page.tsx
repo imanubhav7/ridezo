@@ -5,6 +5,7 @@ import { ArrowLeft, CircleDashed, FileCheck, UploadCloud } from "lucide-react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 type docsType = "aadhar" | "license" | "rc";
 const page = () => {
@@ -32,7 +33,15 @@ const page = () => {
     formdata.append("license", docs.license);
     formdata.append("rc", docs.rc);
 
-    uploadMutation.mutate(formdata);
+    uploadMutation.mutate(formdata, {
+      onSuccess: () => {
+        toast.success("Documents uploaded successfully");
+        router.push("/partner/onboarding/bank");
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    });
   };
 
   const handleImg = (doc: docsType, file: File | null) => {
@@ -40,6 +49,7 @@ const page = () => {
 
     setDocs((prev) => ({ ...prev, [doc]: file }));
   };
+  const isComplete = docs.aadhar && docs.license && docs.rc;
 
   const router = useRouter();
   return (
@@ -73,15 +83,22 @@ const page = () => {
               <p className="text-sm font-semibold">Adhaar /ID Proof</p>
               <p className="text-xs text-gray-500">Government Issued ID</p>
             </div>
-            <div>
-              <span className="text-xs text-gray-400">Upload</span>
-              <div
-                className="w-10 h-10 flex justify-center items-center rounded-full bg-black text-white
+
+            {docs.aadhar ? (
+              <span className="text-xs text-green-600 font-medium">
+                Uploaded
+              </span>
+            ) : (
+              <div>
+                <span className="text-xs text-gray-400">Upload</span>
+                <div
+                  className="w-10 h-10 flex justify-center items-center rounded-full bg-black text-white
               "
-              >
-                <UploadCloud size={18} />
+                >
+                  <UploadCloud size={18} />
+                </div>
               </div>
-            </div>
+            )}
 
             <input
               type="file"
@@ -101,15 +118,21 @@ const page = () => {
               <p className="text-sm font-semibold">Driving License</p>
               <p className="text-xs text-gray-500">Valid driving license</p>
             </div>
-            <div>
-              <span className="text-xs text-gray-400">Upload</span>
-              <div
-                className="w-10 h-10 flex justify-center items-center rounded-full bg-black text-white
+            {docs.license ? (
+              <span className="text-xs text-green-600 font-medium">
+                Uploaded
+              </span>
+            ) : (
+              <div>
+                <span className="text-xs text-gray-400">Upload</span>
+                <div
+                  className="w-10 h-10 flex justify-center items-center rounded-full bg-black text-white
               "
-              >
-                <UploadCloud size={18} />
+                >
+                  <UploadCloud size={18} />
+                </div>
               </div>
-            </div>
+            )}
 
             <input
               type="file"
@@ -128,15 +151,21 @@ const page = () => {
               <p className="text-sm font-semibold">Vehicle RC</p>
               <p className="text-xs text-gray-500">Registration Certificate</p>
             </div>
-            <div>
-              <span className="text-xs text-gray-400">Upload</span>
-              <div
-                className="w-10 h-10 flex justify-center items-center rounded-full bg-black text-white
+            {docs.rc ? (
+              <span className="text-xs text-green-600 font-medium">
+                Uploaded
+              </span>
+            ) : (
+              <div>
+                <span className="text-xs text-gray-400">Upload</span>
+                <div
+                  className="w-10 h-10 flex justify-center items-center rounded-full bg-black text-white
               "
-              >
-                <UploadCloud size={18} />
+                >
+                  <UploadCloud size={18} />
+                </div>
               </div>
-            </div>
+            )}
 
             <input
               type="file"
@@ -160,7 +189,7 @@ const page = () => {
           <p className="text-sm text-red-500 font-semibold">{errorMsg}</p>
         )}
         <motion.button
-          disabled={uploadMutation.isPending}
+          disabled={uploadMutation.isPending || !isComplete}
           onClick={handleUpload}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.96 }}

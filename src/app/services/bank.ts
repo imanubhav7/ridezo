@@ -18,3 +18,14 @@ export const createBankDetails = async (bankData: Banktype) => {
     throw error;
   }
 };
+
+export const getBankDetails = async () => {
+  try {
+    const { data } = await axios.get("/api/partner/onboarding/bank");
+    // console.log(data);
+    return data;
+  } catch (error) {
+    console.log("Bank Details Error", error);
+    throw error;
+  }
+};

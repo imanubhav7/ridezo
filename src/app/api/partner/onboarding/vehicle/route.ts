@@ -34,13 +34,6 @@ export async function POST(req: Request) {
     }
 
     const vehicleNum = number.toUpperCase();
-    const duplicate = await Vehicle.findOne({ number: vehicleNum });
-    if (duplicate) {
-      return Response.json(
-        { message: "Vehicle already registered with this number" },
-        { status: 400 },
-      );
-    }
 
     let vehicle = await Vehicle.findOne({
       owner: user._id,
@@ -52,6 +45,13 @@ export async function POST(req: Request) {
         (vehicle.status = "pending"));
       await vehicle.save();
       return Response.json(vehicle, { status: 200 });
+    }
+    const duplicate = await Vehicle.findOne({ number: vehicleNum });
+    if (duplicate) {
+      return Response.json(
+        { message: "Vehicle already registered with this number" },
+        { status: 400 },
+      );
     }
     vehicle = await Vehicle.create({
       owner: user._id,

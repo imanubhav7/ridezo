@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
         accountNumber,
         ifsc,
         upi,
+
         status: "added",
       },
       { upsert: true, new: true },
@@ -64,7 +65,10 @@ export async function GET(req: NextRequest) {
     const partnerBank = await PartnerBank.findOne({ owner: user._id });
 
     if (partnerBank) {
-      return Response.json({ message: partnerBank }, { status: 200 });
+      return Response.json(
+        { partnerBank, mobileNumber: user.mobileNumber },
+        { status: 200 },
+      );
     } else {
       return null;
     }
